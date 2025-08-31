@@ -40,63 +40,99 @@ def load_and_prepare_data():
 def create_time_series_analysis(df):
     """Create comprehensive time series plots without COVID distortion"""
     
+    # Create continuous index for plotting (removes date gaps)
+    df_plot = df.copy()
+    df_plot['plot_index'] = range(len(df_plot))
+    
+    # Create custom date labels for x-axis (every 26 weeks = ~6 months)
+    date_indices = range(0, len(df_plot), 26)
+    date_labels = [df_plot.iloc[i]['week_ending_date'].strftime('%Y-%m') for i in date_indices]
+    
     fig, axes = plt.subplots(3, 2, figsize=(16, 14))
     fig.suptitle('Economic Indicators Time Series Analysis (No COVID Period)', fontsize=16, fontweight='bold')
     
     # 1. Raw time series
-    axes[0,0].plot(df['week_ending_date'], df['ICSA'], label='ICSA', color='red', alpha=0.8)
+    axes[0,0].plot(df_plot['plot_index'], df_plot['ICSA'], label='ICSA', color='red', alpha=0.8)
     axes[0,0].set_title('Unemployment Claims (ICSA) - Raw Values', fontweight='bold')
     axes[0,0].set_ylabel('Weekly Claims')
     axes[0,0].grid(True, alpha=0.3)
-    axes[0,0].tick_params(axis='x', rotation=45)
+    axes[0,0].set_xticks(date_indices)
+    axes[0,0].set_xticklabels(date_labels, rotation=45)
+    
+    # Add vertical line to show where COVID period would be
+    covid_break_idx = len(df_plot[df_plot['week_ending_date'] < '2020-01-01'])
+    if covid_break_idx < len(df_plot):
+        axes[0,0].axvline(x=covid_break_idx, color='gray', linestyle='--', alpha=0.5, 
+                         label='COVID period excluded')
+        axes[0,0].legend()
     
     # 2. Gold prices
-    axes[0,1].plot(df['week_ending_date'], df['gold_close_avg'], label='Gold Price', color='gold', alpha=0.8)
+    axes[0,1].plot(df_plot['plot_index'], df_plot['gold_close_avg'], label='Gold Price', color='gold', alpha=0.8)
     axes[0,1].set_title('Gold Prices - Raw Values', fontweight='bold')
     axes[0,1].set_ylabel('Price ($)')
     axes[0,1].grid(True, alpha=0.3)
-    axes[0,1].tick_params(axis='x', rotation=45)
+    axes[0,1].set_xticks(date_indices)
+    axes[0,1].set_xticklabels(date_labels, rotation=45)
+    
+    if covid_break_idx < len(df_plot):
+        axes[0,1].axvline(x=covid_break_idx, color='gray', linestyle='--', alpha=0.5)
     
     # 3. Crypto market cap
-    axes[1,0].plot(df['week_ending_date'], df['crypto_market_cap']/1e9, label='Crypto Market Cap', color='purple', alpha=0.8)
+    axes[1,0].plot(df_plot['plot_index'], df_plot['crypto_market_cap']/1e9, label='Crypto Market Cap', color='purple', alpha=0.8)
     axes[1,0].set_title('Cryptocurrency Market Cap - Raw Values', fontweight='bold')
     axes[1,0].set_ylabel('Market Cap (Billions $)')
     axes[1,0].grid(True, alpha=0.3)
-    axes[1,0].tick_params(axis='x', rotation=45)
+    axes[1,0].set_xticks(date_indices)
+    axes[1,0].set_xticklabels(date_labels, rotation=45)
+    
+    if covid_break_idx < len(df_plot):
+        axes[1,0].axvline(x=covid_break_idx, color='gray', linestyle='--', alpha=0.5)
     
     # 4. Log scale comparison
-    axes[1,1].plot(df['week_ending_date'], df['log_icsa'], label='Log(ICSA)', color='red', alpha=0.8)
-    axes[1,1].plot(df['week_ending_date'], df['log_gold'], label='Log(Gold)', color='gold', alpha=0.8)
-    axes[1,1].plot(df['week_ending_date'], df['log_crypto'], label='Log(Crypto)', color='purple', alpha=0.8)
+    axes[1,1].plot(df_plot['plot_index'], df_plot['log_icsa'], label='Log(ICSA)', color='red', alpha=0.8)
+    axes[1,1].plot(df_plot['plot_index'], df_plot['log_gold'], label='Log(Gold)', color='gold', alpha=0.8)
+    axes[1,1].plot(df_plot['plot_index'], df_plot['log_crypto'], label='Log(Crypto)', color='purple', alpha=0.8)
     axes[1,1].set_title('Log Scale Comparison', fontweight='bold')
     axes[1,1].set_ylabel('Log Values')
     axes[1,1].legend()
     axes[1,1].grid(True, alpha=0.3)
-    axes[1,1].tick_params(axis='x', rotation=45)
+    axes[1,1].set_xticks(date_indices)
+    axes[1,1].set_xticklabels(date_labels, rotation=45)
+    
+    if covid_break_idx < len(df_plot):
+        axes[1,1].axvline(x=covid_break_idx, color='gray', linestyle='--', alpha=0.5)
     
     # 5. Normalized comparison (0-1 scale)
-    axes[2,0].plot(df['week_ending_date'], df['norm_icsa'], label='ICSA (normalized)', color='red', alpha=0.8)
-    axes[2,0].plot(df['week_ending_date'], df['norm_gold'], label='Gold (normalized)', color='gold', alpha=0.8)
-    axes[2,0].plot(df['week_ending_date'], df['norm_crypto'], label='Crypto (normalized)', color='purple', alpha=0.8)
+    axes[2,0].plot(df_plot['plot_index'], df_plot['norm_icsa'], label='ICSA (normalized)', color='red', alpha=0.8)
+    axes[2,0].plot(df_plot['plot_index'], df_plot['norm_gold'], label='Gold (normalized)', color='gold', alpha=0.8)
+    axes[2,0].plot(df_plot['plot_index'], df_plot['norm_crypto'], label='Crypto (normalized)', color='purple', alpha=0.8)
     axes[2,0].set_title('Normalized Comparison (0-1 Scale)', fontweight='bold')
     axes[2,0].set_ylabel('Normalized Values')
     axes[2,0].legend()
     axes[2,0].grid(True, alpha=0.3)
-    axes[2,0].tick_params(axis='x', rotation=45)
+    axes[2,0].set_xticks(date_indices)
+    axes[2,0].set_xticklabels(date_labels, rotation=45)
+    
+    if covid_break_idx < len(df_plot):
+        axes[2,0].axvline(x=covid_break_idx, color='gray', linestyle='--', alpha=0.5)
     
     # 6. Rolling correlations
     window = 52  # 1 year rolling window
-    rolling_corr_gold = df['log_icsa'].rolling(window).corr(df['log_gold'])
-    rolling_corr_crypto = df['log_icsa'].rolling(window).corr(df['log_crypto'])
+    rolling_corr_gold = df_plot['log_icsa'].rolling(window).corr(df_plot['log_gold'])
+    rolling_corr_crypto = df_plot['log_icsa'].rolling(window).corr(df_plot['log_crypto'])
     
-    axes[2,1].plot(df['week_ending_date'], rolling_corr_gold, label='ICSA vs Gold', color='orange', alpha=0.8)
-    axes[2,1].plot(df['week_ending_date'], rolling_corr_crypto, label='ICSA vs Crypto', color='purple', alpha=0.8)
+    axes[2,1].plot(df_plot['plot_index'], rolling_corr_gold, label='ICSA vs Gold', color='orange', alpha=0.8)
+    axes[2,1].plot(df_plot['plot_index'], rolling_corr_crypto, label='ICSA vs Crypto', color='purple', alpha=0.8)
     axes[2,1].axhline(y=0, color='black', linestyle='--', alpha=0.5)
     axes[2,1].set_title('Rolling Correlations (52-week window)', fontweight='bold')
     axes[2,1].set_ylabel('Correlation')
     axes[2,1].legend()
     axes[2,1].grid(True, alpha=0.3)
-    axes[2,1].tick_params(axis='x', rotation=45)
+    axes[2,1].set_xticks(date_indices)
+    axes[2,1].set_xticklabels(date_labels, rotation=45)
+    
+    if covid_break_idx < len(df_plot):
+        axes[2,1].axvline(x=covid_break_idx, color='gray', linestyle='--', alpha=0.5)
     
     plt.tight_layout()
     plt.savefig('visualizations/time_series_no_covid.png', dpi=300, bbox_inches='tight')
@@ -174,41 +210,61 @@ def create_correlation_analysis(df):
 def create_volatility_analysis(df):
     """Analyze volatility patterns without COVID distortion"""
     
+    # Create continuous index for plotting
+    df_plot = df.copy()
+    df_plot['plot_index'] = range(len(df_plot))
+    
+    # Create custom date labels
+    date_indices = range(0, len(df_plot), 26)
+    date_labels = [df_plot.iloc[i]['week_ending_date'].strftime('%Y-%m') for i in date_indices]
+    
     # Calculate rolling volatility (standard deviation)
     window = 26  # 6-month rolling window
     
-    df['icsa_volatility'] = df['ICSA'].rolling(window).std()
-    df['gold_volatility'] = df['gold_close_avg'].rolling(window).std()
-    df['crypto_volatility'] = df['crypto_market_cap'].rolling(window).std()
+    df_plot['icsa_volatility'] = df_plot['ICSA'].rolling(window).std()
+    df_plot['gold_volatility'] = df_plot['gold_close_avg'].rolling(window).std()
+    df_plot['crypto_volatility'] = df_plot['crypto_market_cap'].rolling(window).std()
     
     # Calculate percentage changes
-    df['icsa_pct_change'] = df['ICSA'].pct_change()
-    df['gold_pct_change'] = df['gold_close_avg'].pct_change()
-    df['crypto_pct_change'] = df['crypto_market_cap'].pct_change()
+    df_plot['icsa_pct_change'] = df_plot['ICSA'].pct_change()
+    df_plot['gold_pct_change'] = df_plot['gold_close_avg'].pct_change()
+    df_plot['crypto_pct_change'] = df_plot['crypto_market_cap'].pct_change()
     
     fig, axes = plt.subplots(2, 2, figsize=(16, 12))
     fig.suptitle('Volatility Analysis (No COVID Period)', fontsize=16, fontweight='bold')
     
+    # Add COVID break indicator
+    covid_break_idx = len(df_plot[df_plot['week_ending_date'] < '2020-01-01'])
+    
     # 1. Rolling volatility
-    axes[0,0].plot(df['week_ending_date'], df['icsa_volatility'], label='ICSA Volatility', color='red', alpha=0.8)
+    axes[0,0].plot(df_plot['plot_index'], df_plot['icsa_volatility'], label='ICSA Volatility', color='red', alpha=0.8)
     axes[0,0].set_title('ICSA Rolling Volatility (26-week window)', fontweight='bold')
     axes[0,0].set_ylabel('Standard Deviation')
     axes[0,0].grid(True, alpha=0.3)
-    axes[0,0].tick_params(axis='x', rotation=45)
+    axes[0,0].set_xticks(date_indices)
+    axes[0,0].set_xticklabels(date_labels, rotation=45)
+    if covid_break_idx < len(df_plot):
+        axes[0,0].axvline(x=covid_break_idx, color='gray', linestyle='--', alpha=0.5)
     
     # 2. Gold volatility
-    axes[0,1].plot(df['week_ending_date'], df['gold_volatility'], label='Gold Volatility', color='gold', alpha=0.8)
+    axes[0,1].plot(df_plot['plot_index'], df_plot['gold_volatility'], label='Gold Volatility', color='gold', alpha=0.8)
     axes[0,1].set_title('Gold Price Rolling Volatility (26-week window)', fontweight='bold')
     axes[0,1].set_ylabel('Standard Deviation')
     axes[0,1].grid(True, alpha=0.3)
-    axes[0,1].tick_params(axis='x', rotation=45)
+    axes[0,1].set_xticks(date_indices)
+    axes[0,1].set_xticklabels(date_labels, rotation=45)
+    if covid_break_idx < len(df_plot):
+        axes[0,1].axvline(x=covid_break_idx, color='gray', linestyle='--', alpha=0.5)
     
     # 3. Crypto volatility
-    axes[1,0].plot(df['week_ending_date'], df['crypto_volatility']/1e9, label='Crypto Volatility', color='purple', alpha=0.8)
+    axes[1,0].plot(df_plot['plot_index'], df_plot['crypto_volatility']/1e9, label='Crypto Volatility', color='purple', alpha=0.8)
     axes[1,0].set_title('Crypto Market Cap Rolling Volatility (26-week window)', fontweight='bold')
     axes[1,0].set_ylabel('Standard Deviation (Billions $)')
     axes[1,0].grid(True, alpha=0.3)
-    axes[1,0].tick_params(axis='x', rotation=45)
+    axes[1,0].set_xticks(date_indices)
+    axes[1,0].set_xticklabels(date_labels, rotation=45)
+    if covid_break_idx < len(df_plot):
+        axes[1,0].axvline(x=covid_break_idx, color='gray', linestyle='--', alpha=0.5)
     
     # 4. Percentage change distributions
     axes[1,1].hist(df['icsa_pct_change'].dropna(), bins=50, alpha=0.7, label='ICSA', color='red', density=True)
@@ -247,21 +303,30 @@ def create_recent_period_analysis(df):
     
     print(f"\n=== Recent Period Analysis (2022+): {len(recent_data)} weeks ===")
     
+    # Create continuous index for recent data plotting
+    recent_data = recent_data.copy()
+    recent_data['plot_index'] = range(len(recent_data))
+    
+    # Create custom date labels for recent period
+    date_indices = range(0, len(recent_data), 13)  # Every 13 weeks = ~3 months
+    date_labels = [recent_data.iloc[i]['week_ending_date'].strftime('%Y-%m') for i in date_indices if i < len(recent_data)]
+    
     fig, axes = plt.subplots(2, 2, figsize=(16, 12))
     fig.suptitle('Recent Period Analysis (2022+ Post-COVID Recovery)', fontsize=16, fontweight='bold')
     
     # 1. Recent time series with emphasized unemployment
-    axes[0,0].plot(recent_data['week_ending_date'], recent_data['norm_icsa'] * 3, 
+    axes[0,0].plot(recent_data['plot_index'], recent_data['norm_icsa'] * 3, 
                    label='ICSA (3x amplified)', color='red', linewidth=2, alpha=0.9)
-    axes[0,0].plot(recent_data['week_ending_date'], recent_data['norm_gold'], 
+    axes[0,0].plot(recent_data['plot_index'], recent_data['norm_gold'], 
                    label='Gold (normalized)', color='gold', alpha=0.8)
-    axes[0,0].plot(recent_data['week_ending_date'], recent_data['norm_crypto'], 
+    axes[0,0].plot(recent_data['plot_index'], recent_data['norm_crypto'], 
                    label='Crypto (normalized)', color='purple', alpha=0.8)
     axes[0,0].set_title('Recent Trends - Unemployment Movements Emphasized', fontweight='bold')
     axes[0,0].set_ylabel('Normalized Values')
     axes[0,0].legend()
     axes[0,0].grid(True, alpha=0.3)
-    axes[0,0].tick_params(axis='x', rotation=45)
+    axes[0,0].set_xticks(date_indices)
+    axes[0,0].set_xticklabels(date_labels, rotation=45)
     
     # 2. Recent correlations
     recent_corr_gold = recent_data['log_icsa'].corr(recent_data['log_gold'])
@@ -293,17 +358,18 @@ def create_recent_period_analysis(df):
     gold_vol_norm = recent_data['gold_vol'] / recent_data['gold_vol'].max()
     crypto_vol_norm = recent_data['crypto_vol'] / recent_data['crypto_vol'].max()
     
-    axes[1,0].plot(recent_data['week_ending_date'], icsa_vol_norm, 
+    axes[1,0].plot(recent_data['plot_index'], icsa_vol_norm, 
                    label='ICSA Volatility', color='red', alpha=0.8)
-    axes[1,0].plot(recent_data['week_ending_date'], gold_vol_norm, 
+    axes[1,0].plot(recent_data['plot_index'], gold_vol_norm, 
                    label='Gold Volatility', color='gold', alpha=0.8)
-    axes[1,0].plot(recent_data['week_ending_date'], crypto_vol_norm, 
+    axes[1,0].plot(recent_data['plot_index'], crypto_vol_norm, 
                    label='Crypto Volatility', color='purple', alpha=0.8)
     axes[1,0].set_title('Recent Volatility Comparison (Normalized)', fontweight='bold')
     axes[1,0].set_ylabel('Normalized Volatility')
     axes[1,0].legend()
     axes[1,0].grid(True, alpha=0.3)
-    axes[1,0].tick_params(axis='x', rotation=45)
+    axes[1,0].set_xticks(date_indices)
+    axes[1,0].set_xticklabels(date_labels, rotation=45)
     
     # 4. Reactivity analysis - how gold/crypto react to unemployment changes
     recent_data['icsa_change'] = recent_data['ICSA'].pct_change()
